@@ -1,52 +1,70 @@
 #COMP 8006 Assignment 1
 
+
+#User defined section###############################################################
+PERMIT_TCP='22, 53, 80, 443'
+PERMIT_UDP='22, 53, 67, 68'
+REJECT='0'
+
+#Clear existing IP table
 iptables -F
 iptables -X
+
+#Create a chain to track www and ssh
+iptables -N PERMIT-TRAFFIC
+iptables -N ALL-TRAFFIC
 
 #Set default policies
 iptables -P INPUT DROP
 iptables -P OUTPUT DROP
 iptables -P FORWARD DROP
 
-#do we output on the same port??
-#allow DNS traffic 
-#iptables -A OUTPUT -m udp -p udp --sport 53 --dport 53 -j ACCEPT # state --state NEW,RELATED -j ACCEPT
-#iptables -A OUPUT -m udp -p udp --dport 53 -j ACCEPT
-#allow DHCP traffic
-#iptables -A INPUT -m udp -p udp --sport 67 -j ACCEPT 
-#iptables -A OUTPUT -m udp -p udp --dport 67 -j ACCEPT 
-#iptables -A INPUT -m udp -p udp --sport 68 -j ACCEPT 
-#iptables -A OUTPUT -m udp -p udp --dport 68 -j ACCEPT 
+#Accounting#########################################################################
+#SSH and WWW traffic
+iptables -A INPUT -m tcp -p tcp --sport 22 --dport 22 -j PERMIT-TRAFFIC
+iptables -A INPUT -m tcp -p tcp --sport 80 --dport 80 -j PERMIT-TRAFFIC
+iptables -A INPUT -m tcp -p tcp --sport 443 --dport 443 -j PERMIT-TRAFFIC
+iptables -A OUTPUT -m tcp -p tcp --sport 22 --dport 22 -j PERMIT-TRAFFIC
+iptables -A OUTPUT -m tcp -p tcp --sport 80 --dport 80 -j PERMIT-TRAFFIC
+iptables -A OUTPUT -m tcp -p tcp --sport 443 --dport 443 -j PERMIT-TRAFFIC
 
+#Accounting#########################################################################
+iptables -A INPUT -p all -j ALL-TRAFFIC
+iptables -A OUTPUT -p all -j ALL-TRAFFIC
 
-#allow inbound SSH packets
-#iptables -A INPUT -m tcp -p tcp --dport 22 -j ACCEPT
-iptables -A INPUT -p tcp --dport 22 -j ACCEPT
-#allow outboud SSH PACKETS
-#iptables -A OUTPUT -m tcp -p tcp --sport 22 -j ACCEPT
-iptables -A OUTPUT -p tcp --sport 22 -j ACCEPT
-
-
-#allow inbound WWW packets
-#iptables -A INPUT -m tcp -p tcp --sport 80 -j ACCEPT
-#allow outboud WWW PACKETS
-#iptables -A OUTPUT -m tcp -p tcp --dport 80 -j ACCEPT
+#RULE#########################################################################
+#in order for DNS to work properly
+#iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 
 #drop inboud port 80 (http) from source port <1024
-#iptables -A INPUT -m tcp -p tcp --dport 80 -j DROP
+iptables -A PERMIT-TRAFFIC -p tcp -m tcp --dport 80 --sport :1023 -j DROP #NOT WORKING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
 
 #drop all incoming SYN packets
 #iptables -A INPUT -m tcp -p tcp --syn -j DROP 
 #iptables -A INPUT -p tcp --tcp-flags ALL SYN -j DROP
 
 
+IFS=',' read -ra LIST <<< "$REJECT"
+for i in "${LIST[@]}"; do
+    iptables -A ALL-TRAFFIC -p tcp --sport $i -j DROP
+    iptables -A ALL-TRAFFIC -p tcp --dport $i  -j DROP
+    iptables -A ALL-TRAFFIC -p udp  --sport $i -j DROP
+    iptables -A ALL-TRAFFIC -p udp --dport $i -j DROP
+done
 
-#drop all inbound traffic from port 0 
-#iptables -A INPUT -m tcp -p tcp --dport 0 -j DROP
-#drop all outbound traffic from port 0
-#iptables -A OUTPUT -m tcp -p tcp --sport 0 -j DROP
+IFS=',' read -ra LIST <<< "$PERMIT_TCP"
+for i in "${LIST[@]}"; do
+    iptables -A PERMIT-TRAFFIC -p tcp --dport $i -j ACCEPT
+    iptables -A PERMIT-TRAFFIC -p tcp --sport $i -j ACCEPT
+    iptables -A ALL-TRAFFIC -p tcp --dport $i -j ACCEPT
+    iptables -A ALL-TRAFFIC -p tcp --sport $i -j ACCEPT
+done
 
-#drop all other incoming packets
-#iptables -A INPUT -s 192.168.1.0/24 -j DROP
-iptables -A INPUT -j DROP
-iptables -A OUTPUT -j DROP
+IFS=',' read -ra LIST <<< "$PERMIT_UDP"
+for i in "${LIST[@]}"; do
+    iptables -A PERMIT-TRAFFIC -p udp --dport $i -j ACCEPT
+    iptables -A PERMIT-TRAFFIC -p udp --sport $i -j ACCEPT
+    iptables -A ALL-TRAFFIC -p udp --dport $i -j ACCEPT
+    iptables -A ALL-TRAFFIC -p udp --sport $i -j ACCEPT
+done
+
