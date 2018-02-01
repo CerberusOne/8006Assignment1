@@ -19,14 +19,21 @@ iptables -P INPUT DROP
 iptables -P OUTPUT DROP
 iptables -P FORWARD DROP
 
+
 #Accounting#########################################################################
 #SSH and WWW traffic
-iptables -A INPUT -m tcp -p tcp --sport 22 --dport 22 -j PERMIT-TRAFFIC
-iptables -A INPUT -m tcp -p tcp --sport 80 --dport 80 -j PERMIT-TRAFFIC
-iptables -A INPUT -m tcp -p tcp --sport 443 --dport 443 -j PERMIT-TRAFFIC
-iptables -A OUTPUT -m tcp -p tcp --sport 22 --dport 22 -j PERMIT-TRAFFIC
-iptables -A OUTPUT -m tcp -p tcp --sport 80 --dport 80 -j PERMIT-TRAFFIC
-iptables -A OUTPUT -m tcp -p tcp --sport 443 --dport 443 -j PERMIT-TRAFFIC
+iptables -A INPUT -m tcp -p tcp --sport 22 -j PERMIT-TRAFFIC
+iptables -A INPUT -m tcp -p tcp --dport 22 -j PERMIT-TRAFFIC
+iptables -A INPUT -m tcp -p tcp --sport 80 -j PERMIT-TRAFFIC
+iptables -A INPUT -m tcp -p tcp --dport 80 -j PERMIT-TRAFFIC
+iptables -A INPUT -m tcp -p tcp --sport 443 -j PERMIT-TRAFFIC
+iptables -A INPUT -m tcp -p tcp --dport 443 -j PERMIT-TRAFFIC
+iptables -A OUTPUT -m tcp -p tcp --sport 22 -j PERMIT-TRAFFIC
+iptables -A OUTPUT -m tcp -p tcp --dport 22 -j PERMIT-TRAFFIC
+iptables -A OUTPUT -m tcp -p tcp --sport 80 -j PERMIT-TRAFFIC
+iptables -A OUTPUT -m tcp -p tcp --dport 80 -j PERMIT-TRAFFIC
+iptables -A OUTPUT -m tcp -p tcp --sport 443 -j PERMIT-TRAFFIC
+iptables -A OUTPUT -m tcp -p tcp --dport 443 -j PERMIT-TRAFFIC
 
 #Accounting#########################################################################
 iptables -A INPUT -p all -j ALL-TRAFFIC
@@ -40,7 +47,7 @@ iptables -A OUTPUT -p all -j ALL-TRAFFIC
 iptables -A PERMIT-TRAFFIC -p tcp -m tcp --dport 80 --sport :1023 -j DROP #NOT WORKING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
 
 #drop all incoming SYN packets
-#iptables -A INPUT -m tcp -p tcp --syn -j DROP 
+iptables -A INPUT -m tcp -p tcp --syn -j DROP 
 #iptables -A INPUT -p tcp --tcp-flags ALL SYN -j DROP
 
 
