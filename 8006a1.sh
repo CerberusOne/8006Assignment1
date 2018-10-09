@@ -4,15 +4,18 @@
     # run script as normal shell file:
         # $ ./8006.sh
     # save configuration to iptables.rules:
-        # $ iptables-save
+        # $ iptables-save > /etc/iptables/iptables.rules
 
 
-TORRENT=9091 #Torrent = transmission
+TORRENT=9091    #Torrent = transmission
+HTTP=80         #Still need for Pacman/Trizen
+HTTPS=443
+PROXMOX=8006
 
 #User defined section###############################################################
-PERMIT_TCP_CLIENT="22, 53, 80, 443, ${TORRENT}"
+PERMIT_TCP_CLIENT="22, 53, ${HTTP}, ${HTTPS}, ${TORRENT}, ${PROXMOX}"
 PERMIT_TCP_SERVER='22'
-PERMIT_UDP='0, 8, 22, 53, 67, 68'
+PERMIT_UDP='0, 8, 53, 67, 68'
 REJECT='0'
 PING='1'  #0 = false, 1 = true
 
@@ -30,21 +33,6 @@ iptables -P OUTPUT DROP
 iptables -P FORWARD DROP
 
 #Accounting#########################################################################
-#SSH and WWW traffic
-#iptables -A INPUT -m tcp -p tcp --sport 22 -j PERMIT-TRAFFIC
-#iptables -A INPUT -m tcp -p tcp --dport 22 -j PERMIT-TRAFFIC
-#iptables -A INPUT -m tcp -p tcp --sport 80 -j PERMIT-TRAFFIC
-#iptables -A INPUT -m tcp -p tcp --dport 80 -j PERMIT-TRAFFIC
-#iptables -A INPUT -m tcp -p tcp --sport 443 -j PERMIT-TRAFFIC
-#iptables -A INPUT -m tcp -p tcp --dport 443 -j PERMIT-TRAFFIC
-#iptables -A OUTPUT -m tcp -p tcp --sport 22 -j PERMIT-TRAFFIC
-#iptables -A OUTPUT -m tcp -p tcp --dport 22 -j PERMIT-TRAFFIC
-#iptables -A OUTPUT -m tcp -p tcp --sport 80 -j PERMIT-TRAFFIC
-#iptables -A OUTPUT -m tcp -p tcp --dport 80 -j PERMIT-TRAFFIC
-#iptables -A OUTPUT -m tcp -p tcp --sport 443 -j PERMIT-TRAFFIC
-#iptables -A OUTPUT -m tcp -p tcp --dport 443 -j PERMIT-TRAFFIC
-
-#Accounting#########################################################################
 iptables -A INPUT -p all -j ALL-TRAFFIC
 iptables -A OUTPUT -p all -j ALL-TRAFFIC
 
@@ -53,7 +41,7 @@ iptables -A OUTPUT -p all -j ALL-TRAFFIC
 
 #drop inboud port 80 (http) from source port <1024
 #iptables -A PERMIT-TRAFFIC -p tcp -m tcp --dport 80 --sport :1023 -j DROP
-iptables -A PERMIT-TRAFFIC -p tcp -m tcp --dport 80 -j DROP
+iptables -A PERMIT-TRAFFIC -p tcp -m tcp --dport 80 -j DROP                    #turn off for testing httpd bounces
 
 #drop all incoming SYN packets
 iptables -A INPUT -m tcp -p tcp --syn -j DROP
